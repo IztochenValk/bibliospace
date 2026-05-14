@@ -1,0 +1,236 @@
+{
+  "livres": [
+    {
+      "titre": "Le Comte de Monte-Cristo",
+      "auteur": "Alexandre Dumas",
+      "description": "Grand classique d'aventure et de vengeance.",
+      "langue": "FR",
+      "imageUrl": "monte-cristo.jpg",
+      "isbn": "2070000001",
+      "categories": [
+        "Roman",
+        "Histoire"
+      ]
+    },
+    {
+      "titre": "Les Misérables",
+      "auteur": "Victor Hugo",
+      "description": "Roman social majeur du XIXe siècle.",
+      "langue": "FR",
+      "imageUrl": "les-miserables.jpg",
+      "isbn": "207000001X",
+      "categories": [
+        "Roman",
+        "Histoire"
+      ]
+    },
+    {
+      "titre": "1984",
+      "auteur": "George Orwell",
+      "description": "Dystopie politique incontournable.",
+      "langue": "EN",
+      "imageUrl": "1984.jpg",
+      "isbn": "2070000028",
+      "categories": [
+        "Roman",
+        "Science-fiction"
+      ]
+    },
+    {
+      "titre": "Brave New World",
+      "auteur": "Aldous Huxley",
+      "description": "Anticipation sur une société hyper-contrôlée.",
+      "langue": "EN",
+      "imageUrl": "brave-new-world.jpg",
+      "isbn": "2070000036",
+      "categories": [
+        "Roman",
+        "Science-fiction"
+      ]
+    },
+    {
+      "titre": "Dune",
+      "auteur": "Frank Herbert",
+      "description": "Saga fondatrice de la science-fiction moderne.",
+      "langue": "EN",
+      "imageUrl": "dune.jpg",
+      "isbn": "2070000044",
+      "categories": [
+        "Science-fiction"
+      ]
+    },
+    {
+      "titre": "Fondation",
+      "auteur": "Isaac Asimov",
+      "description": "Épopée galactique et réflexion sur les civilisations.",
+      "langue": "EN",
+      "imageUrl": "foundation.jpg",
+      "isbn": "2070000052",
+      "categories": [
+        "Science-fiction"
+      ]
+    },
+    {
+      "titre": "Le Petit Prince",
+      "auteur": "Antoine de Saint-Exupéry",
+      "description": "Conte philosophique universel.",
+      "langue": "FR",
+      "imageUrl": "le-petit-prince.jpg",
+      "isbn": "2070000060",
+      "categories": [
+        "Jeunesse",
+        "Philosophie"
+      ]
+    },
+    {
+      "titre": "Candide",
+      "auteur": "Voltaire",
+      "description": "Satire philosophique concise et brillante.",
+      "langue": "FR",
+      "imageUrl": "candide.jpg",
+      "isbn": "2070000079",
+      "categories": [
+        "Philosophie",
+        "Roman"
+      ]
+    },
+    {
+      "titre": "L'Étranger",
+      "auteur": "Albert Camus",
+      "description": "Roman existentialiste majeur.",
+      "langue": "FR",
+      "imageUrl": "l-etranger.jpg",
+      "isbn": "2070000087",
+      "categories": [
+        "Roman",
+        "Philosophie"
+      ]
+    },
+    {
+      "titre": "Sapiens",
+      "auteur": "Yuval Noah Harari",
+      "description": "Synthèse accessible de l'histoire humaine.",
+      "langue": "FR",
+      "imageUrl": "sapiens.jpg",
+      "isbn": "2070000095",
+      "categories": [
+        "Histoire"
+      ]
+    },
+    {
+      "titre": "Steve Jobs",
+      "auteur": "Walter Isaacson",
+      "description": "Biographie détaillée du fondateur d'Apple.",
+      "langue": "FR",
+      "imageUrl": "steve-jobs.jpg",
+      "isbn": "2070000109",
+      "categories": [
+        "Biographie",
+        "Informatique"
+      ]
+    },
+    {
+      "titre": "Clean Code",
+      "auteur": "Robert C. Martin",
+      "description": "Référence sur les bonnes pratiques de développement.",
+      "langue": "EN",
+      "imageUrl": "clean-code.jpg",
+      "isbn": "2070000117",
+      "categories": [
+        "Informatique"
+      ]
+    },
+    {
+      "titre": "The Pragmatic Programmer",
+      "auteur": "Andrew Hunt",
+      "description": "Livre culte pour développeurs.",
+      "langue": "EN",
+      "imageUrl": "pragmatic-programmer.jpg",
+      "isbn": "2070000125",
+      "categories": [
+        "Informatique"
+      ]
+    },
+    {
+      "titre": "Introduction à la cybersécurité",
+      "auteur": "Collectif",
+      "description": "Panorama des notions essentielles de sécurité.",
+      "langue": "FR",
+      "imageUrl": "discovering-cybersecurity.jpg",
+      "isbn": "2070000133",
+      "categories": [
+        "Cybersécurité",
+        "Informatique"
+      ]
+    },
+    {
+      "titre": "Web Security Essentials",
+      "auteur": "James Carter",
+      "description": "Bases pratiques de la sécurité web.",
+      "langue": "EN",
+      "imageUrl": "cybersecurity-essentials.jpg",
+      "isbn": "2070000141",
+      "categories": [
+        "Cybersécurité",
+        "Informatique"
+      ]
+    },
+    {
+      "titre": "Cryptography Basics",
+      "auteur": "Helen Moore",
+      "description": "Introduction simple à la cryptographie.",
+      "langue": "EN",
+      "imageUrl": "cybersecurity-essentials.jpg",
+      "isbn": "207000015X",
+      "categories": [
+        "Cybersécurité"
+      ]
+    },
+    {
+      "titre": "Une brève histoire du temps",
+      "auteur": "Stephen Hawking",
+      "description": "Vulgarisation scientifique célèbre.",
+      "langue": "FR",
+      "imageUrl": "history-of-time.jpg",
+      "isbn": "2070000168",
+      "categories": [
+        "Histoire"
+      ]
+    },
+    {
+      "titre": "Harry Potter à l'école des sorciers",
+      "auteur": "J. K. Rowling",
+      "description": "Premier tome d'une saga culte.",
+      "langue": "FR",
+      "imageUrl": "harry-potter.jpg",
+      "isbn": "2070000176",
+      "categories": [
+        "Jeunesse",
+        "Roman"
+      ]
+    },
+    {
+      "titre": "Don Quichotte",
+      "auteur": "Miguel de Cervantes",
+      "description": "Chef-d'œuvre de la littérature espagnole.",
+      "langue": "ES",
+      "imageUrl": "don-quichotte.jpg",
+      "isbn": "2070000184",
+      "categories": [
+        "Roman"
+      ]
+    },
+    {
+      "titre": "L'Art de la guerre",
+      "auteur": "Sun Tzu",
+      "description": "Texte stratégique classique.",
+      "langue": "FR",
+      "imageUrl": "l-art-de-la-guerre.jpg",
+      "isbn": "2070000192",
+      "categories": [
+        "Histoire",
+        "Philosophie"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+# =============================================================================
+# .gitignore racine du monorepo BiblioSpace
+#
+# Les sous-projets library-backend/ et library-frontend/ ont leur propre
+# .gitignore (cibles de build Maven, node_modules, .output Nuxt, etc.).
+# Ce fichier ne couvre que les artefacts top-level qui n'appartiennent
+# à aucun sous-projet en particulier.
+# =============================================================================
+
+# ---- IDE / éditeurs --------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ---- OS --------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Logs / dumps ----------------------------------------------------------
+*.log
+*.tmp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Secrets / env ---------------------------------------------------------
+# Aucun .env ne doit être committé. deploy/.env.example sert de template.
+.env
+.env.*
+!.env.example
+deploy/.env
+
+# ---- Clés ------------------------------------------------------------------
+# Les clés RSA JWT, SSH, etc. sont injectées depuis les secrets GitHub Actions
+# et ne doivent jamais transiter par git.
+*.pem
+*.key
+!**/.env.example
+deploy/keys/
+
+# ---- Brouillon / dossiers personnels ---------------------------------------
+poubelle/
+scratch/
+tmp/
+
+# ---- Artefacts de soutenance / mémoire -------------------------------------
+# Si tu veux versionner le mémoire dans le repo, commente la ligne ci-dessous.
+memoire-*.md
+memoire-*.svg
+memoire-*.excalidraw
+memoire-*.docx
+memoire-*.pdf
+bibliospace-*.postman_collection.json

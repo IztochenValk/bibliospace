@@ -1,0 +1,41 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: library-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: library
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: library-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/library?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Europe/Paris
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      # Signature JWT : cles RSA embarquees dans src/main/resources/jwt/
+      # (jwt-private.pem + jwt-public.pem). Configurables via application.properties.
+      APP_JWT_ISSUER: library-app
+      APP_JWT_EXPIRATION_MINUTES: 60
+      APP_STORAGE_UPLOAD_DIR: /uploads/livres
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - library_uploads:/uploads
+
+volumes:
+  mysql_data:
+  library_uploads:

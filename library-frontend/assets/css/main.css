@@ -1,0 +1,113 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "supernova";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-primary: #ff6b00;
+  --color-secondary: #7c3aed;
+  --color-accent: #00e5ff;
+
+  --color-neutral: #0d1425;
+  --color-base-100: #0d1425;
+  --color-base-200: #111827;
+  --color-base-300: #334155;
+
+  --color-base-content: #e2e8f0;
+
+  --color-info: #0ea5e9;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+html,
+body {
+  background-color: #0d1425;
+  color: #e2e8f0;
+}
+
+.text-subtle {
+  color: #94a3b8;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+}
+
+.app-content {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-layout {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-shell {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-card {
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.page-frame {
+  width: 100%;
+  max-width: 1200px;
+  min-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .page-frame {
+    min-width: 700px;
+  }
+}
+
+.page-panel {
+  width: 100%;
+  min-width: 320px;
+}
+
+@media (min-width: 768px) {
+  .page-panel {
+    min-width: 700px;
+  }
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 520px;
+  min-width: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 1rem;
+}
+
+:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}

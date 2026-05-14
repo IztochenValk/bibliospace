@@ -1,0 +1,108 @@
+{
+  "users": [
+    {
+      "nom": "Admin",
+      "prenom": "Principal",
+      "email": "admin@library.local",
+      "password": "Admin123!",
+      "role": "ADMINISTRATEUR",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Martin",
+      "prenom": "Claire",
+      "email": "claire.martin@library.local",
+      "password": "Biblio123!",
+      "role": "BIBLIOTHECAIRE",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Dubois",
+      "prenom": "Julien",
+      "email": "julien.dubois@library.local",
+      "password": "Biblio123!",
+      "role": "BIBLIOTHECAIRE",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Bernard",
+      "prenom": "Alice",
+      "email": "alice.bernard@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Petit",
+      "prenom": "Lucas",
+      "email": "lucas.petit@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Robert",
+      "prenom": "Emma",
+      "email": "emma.robert@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Richard",
+      "prenom": "Nathan",
+      "email": "nathan.richard@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Durand",
+      "prenom": "Chloe",
+      "email": "chloe.durand@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Moreau",
+      "prenom": "Leo",
+      "email": "leo.moreau@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Simon",
+      "prenom": "Ines",
+      "email": "ines.simon@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Laurent",
+      "prenom": "Hugo",
+      "email": "hugo.laurent@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "INACTIF"
+    },
+    {
+      "nom": "Lefevre",
+      "prenom": "Sarah",
+      "email": "sarah.lefevre@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "ACTIF"
+    },
+    {
+      "nom": "Michel",
+      "prenom": "Tom",
+      "email": "tom.michel@library.local",
+      "password": "User12345!",
+      "role": "ADHERENT",
+      "statut": "INACTIF"
+    }
+  ]
+}

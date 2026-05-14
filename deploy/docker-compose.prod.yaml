@@ -1,0 +1,139 @@
+# ============================================================================
+# BiblioSpace - Stack de production
+# Hébergement : VM Alibaba Cloud (Ubuntu 24.04, 2 vCPU / 2 GiB RAM)
+# Domaine : bibliospace.florianchague.dev
+#
+# Usage :
+#   docker compose -f docker-compose.prod.yaml --env-file .env up -d
+#   docker compose -f docker-compose.prod.yaml logs -f
+#   docker compose -f docker-compose.prod.yaml down
+# ============================================================================
+
+services:
+
+  bibliospace-db:
+    image: mysql:8.4
+    container_name: bibliospace-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # PAS de mapping de port host → conteneur : la BDD ne doit pas être
+    # accessible depuis l'extérieur. Seuls les autres conteneurs du réseau
+    # bibliospace_net peuvent l'atteindre via "bibliospace-db:3306".
+    volumes:
+      - db_data:/var/lib/mysql
+    # Limite de RAM stricte. La VM n'a que 1.6 Gi utilisables et MySQL 8 a
+    # tendance à grossir au fil du temps (caches, buffers, performance_schema).
+    # Sans limite, un pic peut etouffer la VM et faire planter le process MySQL
+    # (ce qu'on a deja observe en prod avec un long semaphore wait sur
+    # LOG_LIMITS apres ~25h d'uptime).
+    mem_limit: 256m
+    command:
+      # Note : --default-authentication-plugin a été supprimé en MySQL 8.4.
+      # caching_sha2_password est déjà le plugin par défaut depuis MySQL 8.0,
+      # donc aucune option n'est nécessaire pour le forcer.
+      #
+      # Tuning prod pour VM contrainte (1.6 Gi de RAM, pas de swap a l'origine) :
+      #  - buffer pool reduit a 64M (suffisant pour notre volumetrie : ~100 livres,
+      #    ~50 utilisateurs, ~200 emprunts)
+      #  - log file plus petit pour limiter l'I/O et l'empreinte disque
+      #  - max_connections plafonne a 30 (HikariCP cote back est limite a 10
+      #    par defaut, on garde une marge confortable)
+      #  - performance_schema desactive : economise ~70 MB de RAM et on n'en
+      #    a aucun usage en prod
+      - --innodb-buffer-pool-size=64M
+      - --innodb-log-file-size=32M
+      - --max-connections=30
+      - --performance-schema=OFF
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - bibliospace_net
+
+  bibliospace-back:
+    image: ${GHCR_NAMESPACE}/bibliospace-back:${IMAGE_TAG:-latest}
+    container_name: bibliospace-back
+    restart: unless-stopped
+    depends_on:
+      bibliospace-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://bibliospace-db:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Europe/Paris
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SERVER_PORT: 8080
+      APP_JWT_ISSUER: ${APP_JWT_ISSUER}
+      APP_JWT_EXPIRATION_MINUTES: ${APP_JWT_EXPIRATION_MINUTES:-60}
+      # Cles RSA JWT injectees au runtime via bind mount (cf. volumes ci-dessous).
+      # Permet de tenir les cles HORS du JAR/de l'image (best practice secrets).
+      APP_JWT_PUBLIC_KEY_LOCATION: file:/app/keys/jwt-public.pem
+      APP_JWT_PRIVATE_KEY_LOCATION: file:/app/keys/jwt-private.pem
+      # Override des passwords des utilisateurs du seed (par role) pour la prod
+      APP_DEMO_PASSWORD_ADMIN: ${APP_DEMO_PASSWORD_ADMIN}
+      APP_DEMO_PASSWORD_BIBLIOTHECAIRE: ${APP_DEMO_PASSWORD_BIBLIOTHECAIRE}
+      APP_DEMO_PASSWORD_ADHERENT: ${APP_DEMO_PASSWORD_ADHERENT}
+      APP_STORAGE_UPLOAD_DIR: /uploads/livres
+      # Le front et le back partagent le même domaine grâce au reverse proxy
+      # nginx, donc CORS n'est techniquement pas nécessaire pour la SPA.
+      # On déclare quand même l'origine pour les outils tiers (Postman, curl).
+      APP_CORS_ALLOWED_ORIGINS: https://bibliospace.florianchague.dev
+    ports:
+      # Exposé uniquement sur localhost de la VM, c'est nginx qui fait le
+      # reverse proxy. L'extérieur n'atteint jamais le port 3021 directement.
+      - "127.0.0.1:3021:8080"
+    volumes:
+      - uploads:/uploads
+      # Volume Docker nomme pour les artefacts generes au runtime par l'app
+      # (schema.sql Hibernate, etc.). Permet de persister entre redeploiements
+      # sans bricolage de permissions host (Docker initialise le volume avec
+      # ownership spring:spring depuis l'image).
+      # Pour extraire un fichier vers la VM :
+      #   docker cp bibliospace-back:/app/data/schema.sql ~/bibliospace/data/
+      - app_data:/app/data
+      # Bind mount des cles RSA JWT (read-only). Les fichiers sont injectes
+      # par le workflow CI/CD a partir des secrets GitHub. Mode 644 (lecture
+      # par "other" -> spring UID 100 peut lire) sur les fichiers, 755 sur le
+      # dossier. Pas de probleme de permission car spring n'a qu'a LIRE.
+      - ./keys:/app/keys:ro
+    networks:
+      - bibliospace_net
+
+  bibliospace-front:
+    image: ${GHCR_NAMESPACE}/bibliospace-front:${IMAGE_TAG:-latest}
+    container_name: bibliospace-front
+    restart: unless-stopped
+    environment:
+      # apiBase doit être une ORIGINE (domaine), pas un path.
+      # Toute la couche services/ du front a déjà "/api/..." en dur dans les
+      # URLs (ex: request("/api/auth/login")). Si on remet "/api" ici, on
+      # obtient "/api" + "/api/auth/login" = "/api/api/auth/login" (502).
+      # En prod front et back sont sur la même origine via nginx, donc on
+      # veut une URL relative → apiBase vide.
+      NUXT_PUBLIC_API_BASE: ""
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3020:3000"
+    networks:
+      - bibliospace_net
+
+networks:
+  bibliospace_net:
+    driver: bridge
+
+# Volumes Docker nommés. L'usage de `name:` court-circuite le préfixage
+# automatique par Compose (qui aurait produit `bibliospace_bibliospace_*`
+# à cause du nom du dossier projet).
+volumes:
+  db_data:
+    name: bibliospace_db_data
+  uploads:
+    name: bibliospace_uploads
+  app_data:
+    name: bibliospace_data

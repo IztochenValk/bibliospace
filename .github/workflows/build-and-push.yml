@@ -1,0 +1,317 @@
+name: CI/CD - Build, Push & Déploiement
+
+# =============================================================================
+# Pipeline complet BiblioSpace
+#
+# Déclencheurs :
+#   - push sur main (modif code/conf) → build + push + deploy automatique
+#   - workflow_dispatch                → déclenchement manuel (re-deploy
+#                                         d'urgence sans changement de code)
+#
+# Jobs (chaînés) :
+#   1. build-backend  ─┐
+#                      ├─→ deploy (si push sur main, après les 2 builds OK)
+#   2. build-frontend ─┘
+#
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   Connexion VM :
+#     - SSH_PRIVATE_KEY : clé privée bibliospace_deploy
+#     - SSH_HOST        : 8.209.91.124
+#     - SSH_USER        : admin
+#   Secrets MySQL :
+#     - MYSQL_ROOT_PASSWORD
+#     - MYSQL_PASSWORD
+#   Override des passwords des seed users (par rôle) :
+#     - DEMO_PASSWORD_ADMIN
+#     - DEMO_PASSWORD_BIBLIOTHECAIRE
+#     - DEMO_PASSWORD_ADHERENT
+#   Pull des images GHCR privées depuis la VM :
+#     - GHCR_READ_TOKEN : Personal Access Token (fine-grained) avec
+#                         le scope "read:packages" sur ce repo uniquement.
+#                         Indispensable car le GITHUB_TOKEN du runner n'est
+#                         pas disponible côté VM (token éphémère, scopé runner).
+#   Clés RSA JWT (signature et vérification des tokens) :
+#     - APP_JWT_PRIVATE_KEY : contenu PEM de la clé privée (multiligne, avec
+#                             les lignes -----BEGIN/END PRIVATE KEY-----)
+#     - APP_JWT_PUBLIC_KEY  : contenu PEM de la clé publique (idem)
+#                             Générées une fois avec openssl, jamais commitées.
+# =============================================================================
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'library-backend/**'
+      - 'library-frontend/**'
+      - 'deploy/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+
+  # -------------------------------------------------------------------------
+  # 0. Préparation : calcule le namespace GHCR en minuscules
+  #    (GHCR/OCI exige que le path du repository soit lowercase, or
+  #     github.repository_owner conserve la casse d'origine — ex. "IztochenValk".)
+  # -------------------------------------------------------------------------
+  prepare:
+    name: Préparation du namespace d'image
+    runs-on: ubuntu-latest
+    outputs:
+      namespace: ${{ steps.ns.outputs.namespace }}
+    steps:
+      - id: ns
+        run: echo "namespace=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+  # -------------------------------------------------------------------------
+  # 1. Build du back Spring Boot 4 / Java 17
+  # -------------------------------------------------------------------------
+  build-backend:
+    name: Build & push du backend
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build et push de l'image backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./library-backend
+          file: ./library-backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ needs.prepare.outputs.namespace }}/bibliospace-back:latest
+            ${{ env.REGISTRY }}/${{ needs.prepare.outputs.namespace }}/bibliospace-back:${{ github.sha }}
+          cache-from: type=gha,scope=back
+          cache-to: type=gha,scope=back,mode=max
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=BiblioSpace Backend
+            org.opencontainers.image.description=API REST Spring Boot 4 + Java 17 + JPA + Spring Security OAuth2 Resource Server (JWT RSA)
+
+  # -------------------------------------------------------------------------
+  # 2. Build du front Nuxt 4 / Vue 3
+  # -------------------------------------------------------------------------
+  build-frontend:
+    name: Build & push du frontend
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build et push de l'image frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./library-frontend
+          file: ./library-frontend/Dockerfile
+          push: true
+          # no-cache=true force une recompilation complète du front a chaque
+          # push. Le cache GitHub Actions semblait retenir une couche obsolete
+          # (pages/, components/) qui empechait certaines modifs Vue d'arriver
+          # sur l'image deployee. La penalite de temps de build (~1 min) est
+          # acceptable au regard de la fiabilite du deploiement.
+          no-cache: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ needs.prepare.outputs.namespace }}/bibliospace-front:latest
+            ${{ env.REGISTRY }}/${{ needs.prepare.outputs.namespace }}/bibliospace-front:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=BiblioSpace Frontend
+            org.opencontainers.image.description=Application Nuxt 4 + Vue 3 + Tailwind 4 + DaisyUI 5 (rendu SSR)
+
+  # -------------------------------------------------------------------------
+  # 3. Deploy sur la VM Alibaba (auto si les 2 builds OK)
+  # -------------------------------------------------------------------------
+  deploy:
+    name: Déploiement sur la VM de production
+    needs: [prepare, build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    # Déploie uniquement après un push sur main OU un déclenchement manuel.
+    # Pas de deploy sur des PRs ou autres branches.
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Récupération du code (pour rsync de deploy/)
+        uses: actions/checkout@v4
+
+      - name: Configuration de la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Synchronisation du dossier deploy/ vers la VM
+        run: |
+          # Crée le dossier cible si absent
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ~/bibliospace ~/bibliospace/nginx"
+
+          # rsync le contenu de deploy/ vers ~/bibliospace/ sur la VM
+          # On exclut .env (jamais committé, géré séparément ci-dessous)
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            --exclude '.env' \
+            --exclude 'RUNBOOK.md' \
+            ./deploy/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/bibliospace/
+
+      - name: Génération du .env sur la VM depuis les secrets
+        # Les secrets sont injectés via env: pour qu'ils soient masqués dans
+        # les logs GitHub Actions (rien n'est jamais imprimé en clair).
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          DEMO_PASSWORD_ADMIN: ${{ secrets.DEMO_PASSWORD_ADMIN }}
+          DEMO_PASSWORD_BIBLIOTHECAIRE: ${{ secrets.DEMO_PASSWORD_BIBLIOTHECAIRE }}
+          DEMO_PASSWORD_ADHERENT: ${{ secrets.DEMO_PASSWORD_ADHERENT }}
+          IMAGE_NAMESPACE: ${{ needs.prepare.outputs.namespace }}
+        run: |
+          # Génère le contenu .env en local puis le scp vers la VM (en mode
+          # restreint 600). Aucune valeur sensible n'apparaît dans les logs.
+          cat > /tmp/bibliospace.env << EOF
+          GHCR_NAMESPACE=ghcr.io/${IMAGE_NAMESPACE}
+          IMAGE_TAG=latest
+
+          MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+          MYSQL_DATABASE=bibliospace
+          MYSQL_USER=bibliospace
+          MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+          APP_JWT_ISSUER=bibliospace.florianchague.dev
+          APP_JWT_EXPIRATION_MINUTES=60
+
+          APP_DEMO_PASSWORD_ADMIN=${DEMO_PASSWORD_ADMIN}
+          APP_DEMO_PASSWORD_BIBLIOTHECAIRE=${DEMO_PASSWORD_BIBLIOTHECAIRE}
+          APP_DEMO_PASSWORD_ADHERENT=${DEMO_PASSWORD_ADHERENT}
+          EOF
+
+          scp -i ~/.ssh/deploy_key /tmp/bibliospace.env \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/bibliospace/.env
+
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "chmod 600 ~/bibliospace/.env"
+
+          # Cleanup local (le runner GitHub est éphémère mais autant le faire)
+          rm -f /tmp/bibliospace.env
+
+      - name: Injection des clés RSA JWT sur la VM
+        # Les clés sont passées au shell distant via stdin (heredoc) pour
+        # qu'elles n'apparaissent JAMAIS dans la liste des processus (ps -ef)
+        # ni dans les logs SSH. Le multiline est préservé tel quel.
+        # Les fichiers résultants sont en mode 644 : lisibles par "other"
+        # donc accessibles au user spring (UID 100) du conteneur via le
+        # bind mount, mais sans avoir à toucher aux UIDs côté VM.
+        env:
+          APP_JWT_PRIVATE_KEY: ${{ secrets.APP_JWT_PRIVATE_KEY }}
+          APP_JWT_PUBLIC_KEY: ${{ secrets.APP_JWT_PUBLIC_KEY }}
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ~/bibliospace/keys && chmod 755 ~/bibliospace/keys"
+
+          # Clé privée
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cat > ~/bibliospace/keys/jwt-private.pem && chmod 644 ~/bibliospace/keys/jwt-private.pem" \
+            <<< "$APP_JWT_PRIVATE_KEY"
+
+          # Clé publique
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cat > ~/bibliospace/keys/jwt-public.pem && chmod 644 ~/bibliospace/keys/jwt-public.pem" \
+            <<< "$APP_JWT_PUBLIC_KEY"
+
+      - name: Exécution de setup-vm.sh sur la VM (idempotent)
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "chmod +x ~/bibliospace/setup-vm.sh && ~/bibliospace/setup-vm.sh"
+
+      - name: Connexion à GHCR sur la VM (lecture des packages privés)
+        # Le GITHUB_TOKEN du runner ne fonctionne PAS sur la VM (il est éphémère
+        # et scopé au runner). On utilise un PAT fine-grained avec uniquement
+        # le scope "read:packages". Le token est piped via stdin pour éviter
+        # qu'il apparaisse dans `ps -ef` ou dans les logs SSH.
+        # Le login persiste ensuite dans ~/.docker/config.json sur la VM, donc
+        # les redémarrages manuels (docker compose restart) fonctionnent aussi.
+        env:
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        run: |
+          echo "$GHCR_READ_TOKEN" | ssh -i ~/.ssh/deploy_key \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
+      - name: Pull des dernières images et redémarrage de la stack
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            cd ~/bibliospace
+            echo "Pull des dernières images..."
+            docker compose -f docker-compose.prod.yaml --env-file .env pull
+            echo "Redémarrage de la stack (force-recreate pour garantir que les"
+            echo "containers utilisent bien la nouvelle image, meme si Docker"
+            echo "estime que rien n'a change)..."
+            docker compose -f docker-compose.prod.yaml --env-file .env \
+              up -d --force-recreate --pull always
+            echo "Statut de la stack :"
+            docker compose -f docker-compose.prod.yaml ps
+          EOF
+
+      - name: Smoke tests de production
+        run: |
+          # Polling actif jusqu'a 120s (24 tentatives de 5s) au lieu d'un
+          # sleep aveugle. Spring Boot peut prendre 60-90s a etre pret la
+          # premiere fois (creation du schema JPA + seeders), donc un sleep
+          # statique de 25s donnait des faux 502.
+          echo "Attente du back (timeout 120s)..."
+          for i in $(seq 1 24); do
+            if curl --fail --silent --max-time 5 -o /dev/null \
+                 https://bibliospace.florianchague.dev/v3/api-docs; then
+              echo "  Back pret apres $((i*5))s"
+              break
+            fi
+            if [ "$i" = "24" ]; then
+              echo "  Back toujours pas pret apres 120s, abort"
+              exit 1
+            fi
+            sleep 5
+          done
+
+          echo "→ Test front (HTTPS)"
+          curl --fail --silent --show-error --max-time 10 \
+            -o /dev/null -w "  Statut : %{http_code}\n" \
+            https://bibliospace.florianchague.dev/
+
+          echo "→ Test back (doc Swagger accessible)"
+          curl --fail --silent --show-error --max-time 10 \
+            -o /dev/null -w "  Statut : %{http_code}\n" \
+            https://bibliospace.florianchague.dev/v3/api-docs
+
+          echo "✓ Déploiement validé."
