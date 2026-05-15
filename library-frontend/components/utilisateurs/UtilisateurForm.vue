@@ -1,6 +1,7 @@
 <template>
   <form class="space-y-6" @submit.prevent="onSubmit">
-    <div class="grid gap-4 md:grid-cols-2">
+    <!-- Ligne 1 : Nom · Prénom · Email -->
+    <div class="grid gap-4 md:grid-cols-3">
       <label class="form-control w-full">
         <div class="label">
           <span class="label-text">Nom</span>
@@ -25,7 +26,7 @@
         />
       </label>
 
-      <label class="form-control w-full md:col-span-2">
+      <label class="form-control w-full">
         <div class="label">
           <span class="label-text">Email</span>
         </div>
@@ -36,8 +37,18 @@
           :disabled="loading"
         />
       </label>
+    </div>
 
-      <label class="form-control w-full md:col-span-2">
+    <div
+      v-if="errorMessage"
+      class="alert alert-error"
+    >
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- Ligne 2 : Rôle (à gauche) + Annuler / Enregistrer (à droite) -->
+    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <label class="form-control w-full md:max-w-md">
         <div class="label">
           <span class="label-text">Rôle</span>
           <span
@@ -62,27 +73,20 @@
           </option>
         </select>
       </label>
-    </div>
 
-    <div
-      v-if="errorMessage"
-      class="alert alert-error"
-    >
-      <span>{{ errorMessage }}</span>
-    </div>
+      <div class="flex justify-end gap-3">
+        <NuxtLink class="btn btn-ghost" to="/utilisateurs">
+          Annuler
+        </NuxtLink>
 
-    <div class="flex justify-end gap-3">
-      <NuxtLink class="btn btn-ghost" to="/utilisateurs">
-        Annuler
-      </NuxtLink>
-
-      <button
-        class="btn btn-primary"
-        type="submit"
-        :disabled="loading"
-      >
-        {{ loading ? "Enregistrement..." : "Enregistrer" }}
-      </button>
+        <button
+          class="btn btn-primary"
+          type="submit"
+          :disabled="loading"
+        >
+          {{ loading ? "Enregistrement..." : "Enregistrer" }}
+        </button>
+      </div>
     </div>
   </form>
 </template>
