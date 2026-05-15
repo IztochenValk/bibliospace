@@ -1,6 +1,6 @@
 <template>
   <form class="space-y-6" @submit.prevent="onSubmit">
-    <label class="form-control w-full">
+    <label class="form-control w-full max-w-md">
       <div class="label">
         <span class="label-text">Nom de la catégorie</span>
       </div>

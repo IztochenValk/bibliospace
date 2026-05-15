@@ -28,9 +28,10 @@ import type {
  *     que l'input HTML number autorise des valeurs négatives en saisie clavier
  *     et qu'un Number(undefined) renvoie NaN.
  *
- *   - categorieIds n'est pas géré dans le formulaire actuel : on renvoie
- *     toujours `[]` côté API. La gestion des catégories se fera dans une
- *     itération future.
+ *   - categorieIds est alimenté par un sélecteur multi-choix dans
+ *     LivreForm.vue. En édition, on pré-coche les catégories actuelles du
+ *     livre via `livreToFormValue` qui extrait les ids depuis
+ *     `livre.categories`. À l'envoi, on retransmet les ids cochés.
  *
  * Tout le code de coercion vit ici plutôt que d'être recopié dans les pages,
  * de manière à ce qu'un seul endroit ait à évoluer si le contrat change.
@@ -39,6 +40,10 @@ import type {
 /**
  * Hydrate un formulaire à partir d'une ressource Livre chargée depuis l'API.
  * Tous les `null` du backend sont coercés en `""` pour la liaison v-model.
+ *
+ * Pour les catégories : on n'envoie au form que la liste des IDs (les noms
+ * sont récupérés indépendamment via listCategories() pour alimenter le
+ * sélecteur).
  */
 export function livreToFormValue(livre: Livre): LivreFormValue {
   return {
@@ -49,6 +54,7 @@ export function livreToFormValue(livre: Livre): LivreFormValue {
     imageUrl: livre.imageUrl ?? "",
     isbn: livre.isbn ?? "",
     quantiteTotale: livre.quantiteTotale ?? 0,
+    categorieIds: (livre.categories ?? []).map((c) => c.id),
   };
 }
 
@@ -73,7 +79,7 @@ export function formValueToCreateLivreRequest(
     imageUrl: value.imageUrl.trim() || null,
     isbn: compactIsbn || null,
     quantiteTotale: Math.max(0, Number(value.quantiteTotale) || 0),
-    categorieIds: [],
+    categorieIds: value.categorieIds ?? [],
   };
 }
 
@@ -95,6 +101,6 @@ export function formValueToUpdateLivreRequest(
     imageUrl: value.imageUrl.trim() || null,
     isbn: compactIsbn || null,
     quantiteTotale: Math.max(0, Number(value.quantiteTotale) || 0),
-    categorieIds: [],
+    categorieIds: value.categorieIds ?? [],
   };
 }

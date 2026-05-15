@@ -211,6 +211,61 @@
                 </span>
               </div>
             </label>
+
+            <!-- Catégories (multi-sélection) -->
+            <div class="form-control w-full">
+              <div class="label">
+                <span class="label-text">
+                  Catégories
+                  <span class="text-xs font-normal text-base-content/50">
+                    (optionnel — cliquez pour cocher / décocher)
+                  </span>
+                </span>
+                <span class="label-text-alt text-base-content/50">
+                  {{ localValue.categorieIds.length }} sélectionnée(s)
+                </span>
+              </div>
+
+              <div
+                v-if="categoriesLoading"
+                class="text-sm text-base-content/50"
+              >
+                Chargement des catégories...
+              </div>
+
+              <div
+                v-else-if="categoriesError"
+                class="alert alert-error"
+              >
+                <span>{{ categoriesError }}</span>
+              </div>
+
+              <div
+                v-else-if="categoriesList.length === 0"
+                class="text-sm text-base-content/50"
+              >
+                Aucune catégorie disponible — créez-en d'abord depuis la page
+                <NuxtLink class="link link-primary" to="/categories">Catégories</NuxtLink>.
+              </div>
+
+              <div v-else class="flex flex-wrap gap-2 pt-1">
+                <button
+                  v-for="cat in categoriesList"
+                  :key="cat.id"
+                  type="button"
+                  class="badge badge-lg cursor-pointer transition-colors"
+                  :class="
+                    isCategorieSelected(cat.id)
+                      ? 'badge-primary'
+                      : 'badge-outline hover:badge-primary'
+                  "
+                  :disabled="loading"
+                  @click="toggleCategorie(cat.id)"
+                >
+                  {{ cat.nomCategorie }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -240,11 +295,13 @@
 </template>
 
 <script setup lang="ts">
-import { toRef, watch } from "vue";
+import { onMounted, ref, toRef, watch } from "vue";
 import { useFormSync } from "~/composables/forms/useFormSync";
 import { useImageUpload } from "~/composables/forms/useImageUpload";
 import { useIsbnField } from "~/composables/forms/useIsbnField";
 import { emptyLivreFormValue, type LivreFormValue } from "~/types/livres";
+import { listCategories } from "~/services/categoriesService";
+import type { Categorie } from "~/types/categories";
 
 const props = withDefaults(defineProps<{
   modelValue: LivreFormValue;
@@ -302,6 +359,41 @@ const {
 // Ce watch est volontairement séparé de useFormSync pour éviter une TDZ
 // (markTouched est déclaré plus bas via destructuring de useIsbnField).
 watch(() => props.modelValue, () => markTouched(false));
+
+// ====================================================================
+// Sélecteur de catégories
+// ====================================================================
+// On charge la liste complète des catégories au montage du composant
+// pour alimenter le multi-sélecteur. Le state des catégories cochées
+// vit dans localValue.categorieIds (tableau d'ids), pré-rempli en mode
+// édition via livreToFormValue() côté composable de page.
+const categoriesList = ref<Categorie[]>([]);
+const categoriesLoading = ref(false);
+const categoriesError = ref("");
+
+onMounted(async () => {
+  categoriesLoading.value = true;
+  categoriesError.value = "";
+  try {
+    categoriesList.value = await listCategories();
+  } catch {
+    categoriesError.value = "Impossible de charger les catégories";
+  } finally {
+    categoriesLoading.value = false;
+  }
+});
+
+function isCategorieSelected(id: number): boolean {
+  return localValue.categorieIds.includes(id);
+}
+
+function toggleCategorie(id: number) {
+  if (isCategorieSelected(id)) {
+    localValue.categorieIds = localValue.categorieIds.filter((x) => x !== id);
+  } else {
+    localValue.categorieIds = [...localValue.categorieIds, id];
+  }
+}
 
 function onSubmit() {
   // On émet la valeur brute du formulaire : trim, normalisation ISBN et

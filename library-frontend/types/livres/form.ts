@@ -27,6 +27,11 @@ export type LivreFormValue = {
   imageUrl: string;
   isbn: string;
   quantiteTotale: number;
+  /**
+   * IDs des catégories sélectionnées (multi-sélection côté UI).
+   * Vide tant que l'utilisateur n'a rien coché.
+   */
+  categorieIds: number[];
 };
 
 /**
@@ -41,4 +46,5 @@ export const emptyLivreFormValue: LivreFormValue = {
   imageUrl: "",
   isbn: "",
   quantiteTotale: 0,
+  categorieIds: [],
 };
