@@ -71,8 +71,13 @@
           v-model="localValue.dateRetourPrevue"
           type="date"
           class="input input-bordered w-full"
+          :class="{ 'input-error': dateError }"
+          :min="minDate"
           :disabled="loading"
         />
+        <div v-if="dateError" class="label">
+          <span class="label-text-alt text-error">{{ dateError }}</span>
+        </div>
       </label>
     </div>
 
@@ -122,6 +127,20 @@ const localValue = reactive<EmpruntFormValue>({
 });
 
 const authorFilter = ref("");
+const dateError = ref("");
+
+// Date du jour au format YYYY-MM-DD, utilisée comme borne inférieure du
+// champ date. Validation client (étape 4 du diagramme de séquence) : le
+// navigateur empêche la sélection d'une date antérieure à aujourd'hui via
+// l'attribut min, et un garde-fou JS explicite refuse la soumission en
+// double sécurité au cas où l'attribut min serait contourné.
+const minDate = computed(() => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+});
 
 const sortedUsers = computed(() => {
   return [...props.users].sort((a, b) => {
@@ -156,6 +175,17 @@ const canSubmit = computed(() => {
 });
 
 function onSubmit() {
+  // Validation client de la date — étape 4 du diagramme de séquence :
+  // on bloque la soumission si la date est antérieure à aujourd'hui,
+  // pour éviter l'aller-retour HTTP et donner un feedback immédiat.
+  // La validation côté serveur (@FutureOrPresent + GlobalControllerAdvice)
+  // reste la source de vérité, conformément au pattern défense-en-profondeur.
+  dateError.value = "";
+  if (localValue.dateRetourPrevue && localValue.dateRetourPrevue < minDate.value) {
+    dateError.value = "La date de retour ne peut pas être antérieure à aujourd'hui";
+    return;
+  }
+
   emit("submit", {
     utilisateurId: Number(localValue.utilisateurId),
     livreId: Number(localValue.livreId),
