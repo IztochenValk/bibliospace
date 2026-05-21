@@ -19,8 +19,8 @@ public class EmpruntControllerAdvice {
     }
 
     @ExceptionHandler(EmpruntImpossibleException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public Map<String, Object> empruntImpossible(EmpruntImpossibleException e) {
-        return ApiErrorFactory.build(400, "Bad Request", e.getMessage());
+        return ApiErrorFactory.build(409, "Conflict", e.getMessage());
     }
 }
