@@ -36,7 +36,8 @@ RUN mvn -B clean package -DskipTests
 
 # ---- Etage 3 : runtime ------------------------------------------------------
 FROM eclipse-temurin:17-jre-alpine
-RUN addgroup -S spring && adduser -S spring -G spring
+# openssl : genere une paire de cles JWT au demarrage si aucune n'est fournie
+RUN apk add --no-cache openssl && addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
 COPY --from=back --chown=spring:spring /app/target/*.jar app.jar
 RUN mkdir -p /uploads/livres /app/data /app/keys && chown -R spring:spring /uploads /app/data /app/keys
@@ -55,4 +56,7 @@ ENV SERVER_PORT=8080 \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
     CMD wget -qO- http://localhost:8080/ || exit 1
 
-ENTRYPOINT ["sh", "-c", "if [ -n \"$JWT_PRIVATE_PEM_B64\" ] && [ -n \"$JWT_PUBLIC_PEM_B64\" ]; then echo \"$JWT_PRIVATE_PEM_B64\" | base64 -d > /app/keys/jwt-private.pem && echo \"$JWT_PUBLIC_PEM_B64\" | base64 -d > /app/keys/jwt-public.pem && export APP_JWT_PRIVATE_KEY_LOCATION=file:/app/keys/jwt-private.pem APP_JWT_PUBLIC_KEY_LOCATION=file:/app/keys/jwt-public.pem; fi; exec java $JAVA_OPTS -jar app.jar"]
+# Cles JWT : JWT_PRIVATE_PEM_B64 / JWT_PUBLIC_PEM_B64 si fournies, sinon une
+# paire RSA neuve est generee a chaque demarrage (suffisant pour une demo :
+# la base H2 est elle aussi recreee, les sessions repartent de zero).
+ENTRYPOINT ["sh", "-c", "if [ -n \"$JWT_PRIVATE_PEM_B64\" ] && [ -n \"$JWT_PUBLIC_PEM_B64\" ]; then echo \"$JWT_PRIVATE_PEM_B64\" | base64 -d > /app/keys/jwt-private.pem && echo \"$JWT_PUBLIC_PEM_B64\" | base64 -d > /app/keys/jwt-public.pem; else openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /app/keys/jwt-private.pem 2>/dev/null && openssl pkey -in /app/keys/jwt-private.pem -pubout -out /app/keys/jwt-public.pem; fi; export APP_JWT_PRIVATE_KEY_LOCATION=file:/app/keys/jwt-private.pem APP_JWT_PUBLIC_KEY_LOCATION=file:/app/keys/jwt-public.pem; exec java $JAVA_OPTS -jar app.jar"]
