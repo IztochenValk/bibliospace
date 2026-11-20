@@ -35,7 +35,7 @@ RUN mkdir -p /uploads && chown spring:spring /uploads
 # rapports d'audit, etc. Monté en volume Docker dans docker-compose.prod.yaml
 # pour persister entre redéploiements.
 # Ownership spring:spring -> le user non-root du conteneur peut y ecrire.
-RUN mkdir -p /app/data && chown spring:spring /app/data
+RUN mkdir -p /app/data /app/keys && chown spring:spring /app/data /app/keys
 
 USER spring
 
@@ -46,6 +46,10 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD wget -qO- http://localhost:8080/actuator/health || wget -qO- http://localhost:8080/ || exit 1
 
 # JVM tuning : heap limitée à 384 MB pour cohabiter avec MySQL sur 2 GiB de RAM
+# (surchargeable via la variable JAVA_OPTS, ex. hébergeur PaaS à 512 Mo)
 ENV JAVA_OPTS="-Xmx384m -Xms128m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError"
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Clés JWT : sur la VM elles sont bind-montées dans /app/keys. Sur un PaaS sans
+# montage de fichiers (SnapDeploy, Render...), on peut les passer en base64 via
+# JWT_PRIVATE_PEM_B64 / JWT_PUBLIC_PEM_B64 : elles sont alors écrites au démarrage.
+ENTRYPOINT ["sh", "-c", "if [ -n \"$JWT_PRIVATE_PEM_B64\" ] && [ -n \"$JWT_PUBLIC_PEM_B64\" ]; then echo \"$JWT_PRIVATE_PEM_B64\" | base64 -d > /app/keys/jwt-private.pem && echo \"$JWT_PUBLIC_PEM_B64\" | base64 -d > /app/keys/jwt-public.pem && export APP_JWT_PRIVATE_KEY_LOCATION=file:/app/keys/jwt-private.pem APP_JWT_PUBLIC_KEY_LOCATION=file:/app/keys/jwt-public.pem; fi; exec java $JAVA_OPTS -jar app.jar"]
