@@ -104,6 +104,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- H2 en memoire : utilise uniquement pour la demo hebergee (SnapDeploy),
+             active via SPRING_DATASOURCE_URL=jdbc:h2:mem:... -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>

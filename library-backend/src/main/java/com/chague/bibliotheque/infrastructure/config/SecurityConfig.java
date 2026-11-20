@@ -73,6 +73,9 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/media/livres/**").permitAll()
+                    // Front Nuxt statique servi par le back (demo mono-conteneur) :
+                    // toutes les routes hors /api sont publiques, l'API reste protegee.
+                    .requestMatchers(request -> !request.getRequestURI().startsWith("/api/")).permitAll()
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

@@ -2,6 +2,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-02-04",
+
+  // NUXT_SSR=false : build SPA statique (nuxt generate) servi par Spring Boot
+  // dans l'image mono-conteneur. Par defaut, SSR comme avant.
+  ssr: process.env.NUXT_SSR !== "false",
   css: ["~/assets/css/main.css"],
 
   vite: {

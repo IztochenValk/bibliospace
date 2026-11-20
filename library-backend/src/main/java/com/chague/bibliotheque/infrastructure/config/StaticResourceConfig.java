@@ -4,6 +4,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.web.servlet.resource.PathResourceResolver;
+
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -39,5 +44,27 @@ public class StaticResourceConfig implements WebMvcConfigurer {
         // le fichier sur disque.
         registry.addResourceHandler("/api/media/livres/**")
                 .addResourceLocations("file:" + uploadDir.toString() + "/");
+
+        // Front Nuxt genere en statique (classpath:/static/), present uniquement
+        // dans l'image mono-conteneur (Dockerfile a la racine). Toute route
+        // inconnue hors /api renvoie index.html pour laisser le routeur Vue gerer.
+        // Sans dossier static (deploiement classique), ce handler ne sert rien.
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/")
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                        if (resourcePath.startsWith("api/")) {
+                            return null;
+                        }
+                        Resource requested = location.createRelative(resourcePath);
+                        if (requested.exists() && requested.isReadable()) {
+                            return requested;
+                        }
+                        Resource index = new ClassPathResource("static/index.html");
+                        return index.exists() ? index : null;
+                    }
+                });
     }
 }
