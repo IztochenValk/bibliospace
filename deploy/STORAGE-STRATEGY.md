@@ -162,7 +162,7 @@ Pour le récupérer **sur ton poste Windows** :
 
 ```powershell
 scp -i $env:USERPROFILE\.ssh\bibliospace_deploy `
-    deploy-bibliospace@8.209.91.124:~/bibliospace/data/schema.sql `
+    deploy-bibliospace@8.211.50.241:~/bibliospace/data/schema.sql `
     .\schema.sql
 ```
 

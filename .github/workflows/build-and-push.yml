@@ -16,7 +16,7 @@ name: CI/CD - Build, Push & Déploiement
 # Secrets requis (Settings → Secrets and variables → Actions) :
 #   Connexion VM :
 #     - SSH_PRIVATE_KEY : clé privée bibliospace_deploy
-#     - SSH_HOST        : 8.209.91.124
+#     - SSH_HOST        : 8.211.50.241
 #     - SSH_USER        : admin
 #   Secrets MySQL :
 #     - MYSQL_ROOT_PASSWORD
@@ -208,7 +208,7 @@ jobs:
           MYSQL_USER=bibliospace
           MYSQL_PASSWORD=${MYSQL_PASSWORD}
 
-          APP_JWT_ISSUER=bibliospace.florianchague.dev
+          APP_JWT_ISSUER=bibliospace.kloner.io
           APP_JWT_EXPIRATION_MINUTES=60
 
           APP_DEMO_PASSWORD_ADMIN=${DEMO_PASSWORD_ADMIN}
@@ -293,7 +293,7 @@ jobs:
           echo "Attente du back (timeout 120s)..."
           for i in $(seq 1 24); do
             if curl --fail --silent --max-time 5 -o /dev/null \
-                 https://bibliospace.florianchague.dev/v3/api-docs; then
+                 https://bibliospace.kloner.io/v3/api-docs; then
               echo "  Back pret apres $((i*5))s"
               break
             fi
@@ -307,11 +307,11 @@ jobs:
           echo "→ Test front (HTTPS)"
           curl --fail --silent --show-error --max-time 10 \
             -o /dev/null -w "  Statut : %{http_code}\n" \
-            https://bibliospace.florianchague.dev/
+            https://bibliospace.kloner.io/
 
           echo "→ Test back (doc Swagger accessible)"
           curl --fail --silent --show-error --max-time 10 \
             -o /dev/null -w "  Statut : %{http_code}\n" \
-            https://bibliospace.florianchague.dev/v3/api-docs
+            https://bibliospace.kloner.io/v3/api-docs
 
           echo "✓ Déploiement validé."

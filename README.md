@@ -3,8 +3,8 @@
 > Application web de gestion d'une bibliothèque de quartier — catalogue, emprunts, gestion des utilisateurs et des rôles.
 > Projet fil rouge réalisé dans le cadre du titre RNCP Concepteur Développeur d'Applications (CDA), centre ADRAR Ramonville-Saint-Agne, promotion 2025-2026.
 
-**Démo en ligne** → [https://bibliospace.florianchague.dev](https://bibliospace.florianchague.dev)
-**Documentation API (Swagger)** → [https://bibliospace.florianchague.dev/swagger-ui/index.html](https://bibliospace.florianchague.dev/swagger-ui/index.html)
+**Démo en ligne** → [https://bibliospace.kloner.io](https://bibliospace.kloner.io)
+**Documentation API (Swagger)** → [https://bibliospace.kloner.io/swagger-ui/index.html](https://bibliospace.kloner.io/swagger-ui/index.html)
 
 [![CI/CD - Build, Push & Déploiement](https://github.com/IztochenValk/bibliospace-prod/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/IztochenValk/bibliospace-prod/actions/workflows/build-and-push.yml)
 
@@ -21,7 +21,7 @@
 | Conteneurisation | Docker multi-stage (build → JRE Alpine) · Docker Compose |
 | Reverse proxy | nginx + certbot (Let's Encrypt) |
 | CI/CD | GitHub Actions · GitHub Container Registry (GHCR) |
-| Hébergement | VM Alibaba Cloud (Ubuntu 24.04, 2 vCPU / 2 GiB RAM) |
+| Hébergement | VM Alibaba Cloud (Ubuntu 24.04, 2 vCPU / 4 GiB RAM) |
 
 ---
 
@@ -32,7 +32,7 @@
                                  │
                           ┌──────▼──────┐
                           │    nginx    │  Reverse proxy + TLS Let's Encrypt
-                          │  (host VM)  │  bibliospace.florianchague.dev
+                          │  (host VM)  │  bibliospace.kloner.io
                           └──┬───────┬──┘
                              │       │
                   /api/* + Swagger   │  Tout le reste
@@ -42,7 +42,7 @@
               │ Spring Boot 4    │  │ front          │
               │ port 8080        │  │ Nuxt 4 SSR     │
               │ (127.0.0.1:3021) │  │ port 3000      │
-              └────────┬─────────┘  │ (127.0.0.1:3020)│
+              └────────┬─────────┘  │ (127.0.0.1:3022)│
                        │            └─────────────────┘
                        │
             ┌──────────▼──────────┐
@@ -142,7 +142,7 @@ push main ──┐
    - Exécution de `setup-vm.sh` (idempotent : Docker, nginx, reload conditionnel).
    - `docker login ghcr.io` côté VM avec un PAT scope `read:packages`.
    - `docker compose pull && up -d --force-recreate` pour redémarrer la stack.
-4. **Smoke tests** : polling actif jusqu'à 120 s sur `https://bibliospace.florianchague.dev/v3/api-docs` puis vérification du front en HTTPS.
+4. **Smoke tests** : polling actif jusqu'à 120 s sur `https://bibliospace.kloner.io/v3/api-docs` puis vérification du front en HTTPS.
 
 La documentation détaillée du pipeline (chaque étape, chaque secret, dépannage typique) est dans [**deploy/CI-CD.md**](deploy/CI-CD.md).
 
@@ -160,7 +160,7 @@ Le fichier d'exemple [`deploy/.env.example`](deploy/.env.example) liste les vari
 
 ### Déploiement initial (à faire une fois)
 
-Pour onboarder une nouvelle VM, le script idempotent [`deploy/setup-vm.sh`](deploy/setup-vm.sh) installe Docker, recharge la conf nginx ([`deploy/nginx/bibliospace.florianchague.dev.conf`](deploy/nginx/bibliospace.florianchague.dev.conf)), et avertit si le certificat Let's Encrypt n'est pas encore généré. Voir [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md) pour la check-list de mise en route.
+Pour onboarder une nouvelle VM, le script idempotent [`deploy/setup-vm.sh`](deploy/setup-vm.sh) installe Docker, recharge la conf nginx ([`deploy/nginx/bibliospace.kloner.io.conf`](deploy/nginx/bibliospace.kloner.io.conf)), et avertit si le certificat Let's Encrypt n'est pas encore généré. Voir [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md) pour la check-list de mise en route.
 
 ### Rollback rapide
 

@@ -5,11 +5,11 @@
 # Ce script est exécuté à chaque déploiement, mais ne fait que ce qui est
 # strictement nécessaire (idempotence). Il :
 #   - vérifie les pré-requis (docker, nginx, ufw)
-#   - installe / met à jour le site nginx bibliospace.florianchague.dev
+#   - installe / met à jour le site nginx bibliospace.kloner.io
 #     uniquement si le contenu diffère
 #   - recharge nginx UNIQUEMENT si le site a changé
 #   - n'installe PAS les certificats Let's Encrypt (à faire manuellement
-#     une seule fois via : sudo certbot --nginx -d bibliospace.florianchague.dev)
+#     une seule fois via : sudo certbot --nginx -d bibliospace.kloner.io)
 #
 # Pré-requis admin sudo NOPASSWD à configurer une fois :
 #     sudo visudo
@@ -21,7 +21,7 @@
 set -euo pipefail
 
 DEPLOY_DIR="$HOME/bibliospace"
-NGINX_SITE_NAME="bibliospace.florianchague.dev"
+NGINX_SITE_NAME="bibliospace.kloner.io"
 NGINX_SITE_SRC="${DEPLOY_DIR}/nginx/${NGINX_SITE_NAME}.conf"
 NGINX_SITE_DST="/etc/nginx/sites-available/${NGINX_SITE_NAME}"
 NGINX_SITE_ENABLED="/etc/nginx/sites-enabled/${NGINX_SITE_NAME}"

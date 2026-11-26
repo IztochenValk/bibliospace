@@ -1,6 +1,6 @@
 # RUNBOOK — Déploiement BiblioSpace sur VM Alibaba
 
-**Cible** : `bibliospace.florianchague.dev` sur VM Ubuntu 24.04 (`8.209.91.124`)
+**Cible** : `bibliospace.kloner.io` sur VM Ubuntu 24.04 (`8.211.50.241`)
 **Stack** : 3 conteneurs Docker (front Nuxt SSR + back Spring Boot + MySQL 8.4) derrière nginx + Let's Encrypt
 **Durée estimée** : 1h30 à 2h pour un premier déploiement
 
@@ -9,7 +9,7 @@
 ## Phase 0 — Prérequis (à valider AVANT)
 
 - [x] Clé SSH dédiée `bibliospace_deploy` ajoutée à `~/.ssh/authorized_keys` sur la VM
-- [x] DNS A record `bibliospace.florianchague.dev` → `8.209.91.124` propagé (vérifier avec `nslookup`)
+- [x] DNS A record `bibliospace.kloner.io` → `8.211.50.241` propagé (vérifier avec `nslookup`)
 - [x] VM à jour, redémarrée si nécessaire
 - [ ] Compte GitHub avec accès au registry GHCR (ton namespace existant : `iztochenvalk`)
 - [ ] Token GHCR (PAT classic avec scope `write:packages`) disponible côté local
@@ -73,7 +73,7 @@ Ainsi la VM peut pull sans avoir à s'authentifier sur GHCR. Si tu veux garder l
 ## Phase 2 — Préparation de la VM (en SSH)
 
 ```powershell
-ssh -i $env:USERPROFILE\.ssh\bibliospace_deploy admin@8.209.91.124
+ssh -i $env:USERPROFILE\.ssh\bibliospace_deploy admin@8.211.50.241
 ```
 
 ### 2.1 Création de l'arborescence de déploiement
@@ -90,7 +90,7 @@ Depuis ton poste Windows, dans une autre fenêtre PowerShell :
 ```powershell
 scp -i $env:USERPROFILE\.ssh\bibliospace_deploy `
     C:\Users\flori\Desktop\library-project\deploy\docker-compose.prod.yaml `
-    admin@8.209.91.124:~/bibliospace/docker-compose.prod.yaml
+    admin@8.211.50.241:~/bibliospace/docker-compose.prod.yaml
 ```
 
 ### 2.3 Créer le fichier .env sur la VM
@@ -121,7 +121,7 @@ MYSQL_DATABASE=bibliospace
 MYSQL_USER=bibliospace
 MYSQL_PASSWORD=<32 chars random>
 
-APP_JWT_ISSUER=bibliospace.florianchague.dev
+APP_JWT_ISSUER=bibliospace.kloner.io
 APP_JWT_EXPIRATION_MINUTES=60
 
 APP_BOOTSTRAP_BIBLIOTHECAIRE_EMAIL=florian.chague2@gmail.com
@@ -138,7 +138,7 @@ Aussi : copie le .env.example sur la VM pour référence (depuis Windows) :
 ```powershell
 scp -i $env:USERPROFILE\.ssh\bibliospace_deploy `
     C:\Users\flori\Desktop\library-project\deploy\.env.example `
-    admin@8.209.91.124:~/bibliospace/.env.example
+    admin@8.211.50.241:~/bibliospace/.env.example
 ```
 
 ### 2.4 Login GHCR sur la VM (si images privées)
@@ -159,14 +159,14 @@ Depuis ton poste Windows :
 
 ```powershell
 scp -i $env:USERPROFILE\.ssh\bibliospace_deploy `
-    C:\Users\flori\Desktop\library-project\deploy\nginx\bibliospace.florianchague.dev.conf `
-    admin@8.209.91.124:/tmp/bibliospace.florianchague.dev
+    C:\Users\flori\Desktop\library-project\deploy\nginx\bibliospace.kloner.io.conf `
+    admin@8.211.50.241:/tmp/bibliospace.kloner.io
 ```
 
 Sur la VM :
 ```bash
-sudo mv /tmp/bibliospace.florianchague.dev /etc/nginx/sites-available/bibliospace.florianchague.dev
-sudo ln -s /etc/nginx/sites-available/bibliospace.florianchague.dev /etc/nginx/sites-enabled/
+sudo mv /tmp/bibliospace.kloner.io /etc/nginx/sites-available/bibliospace.kloner.io
+sudo ln -s /etc/nginx/sites-available/bibliospace.kloner.io /etc/nginx/sites-enabled/
 sudo nginx -t
 ```
 
@@ -180,7 +180,7 @@ sudo systemctl reload nginx
 
 Depuis ton poste :
 ```powershell
-curl -I http://bibliospace.florianchague.dev
+curl -I http://bibliospace.kloner.io
 ```
 Doit retourner un `502 Bad Gateway` (les conteneurs ne tournent pas encore — c'est normal). Si tu as un autre code, c'est qu'nginx ne reçoit pas la requête correctement.
 
@@ -188,7 +188,7 @@ Doit retourner un `502 Bad Gateway` (les conteneurs ne tournent pas encore — c
 
 Sur la VM :
 ```bash
-sudo certbot --nginx -d bibliospace.florianchague.dev
+sudo certbot --nginx -d bibliospace.kloner.io
 ```
 
 Réponds aux questions :
@@ -197,7 +197,7 @@ Réponds aux questions :
 - Share email : No (au choix)
 - Redirect HTTP → HTTPS : **2 (Redirect)** — fortement recommandé
 
-Certbot modifie automatiquement ton `bibliospace.florianchague.dev.conf` pour ajouter les `ssl_certificate` etc.
+Certbot modifie automatiquement ton `bibliospace.kloner.io.conf` pour ajouter les `ssl_certificate` etc.
 
 Vérifier :
 ```bash
@@ -237,21 +237,21 @@ Tu dois voir 3 conteneurs `Up X seconds (healthy)`.
 
 ### 5.1 Front
 
-Depuis un navigateur : https://bibliospace.florianchague.dev
+Depuis un navigateur : https://bibliospace.kloner.io
 → Page d'accueil Nuxt s'affiche, le cadenas HTTPS est vert.
 
 ### 5.2 Back via API
 
 Depuis ton poste :
 ```powershell
-curl https://bibliospace.florianchague.dev/api/categories
+curl https://bibliospace.kloner.io/api/categories
 # Doit retourner 401 Unauthorized (normal, pas d'auth) ou un JSON.
 ```
 
 ### 5.3 Login bibliothécaire
 
 ```powershell
-curl -X POST https://bibliospace.florianchague.dev/api/auth/login `
+curl -X POST https://bibliospace.kloner.io/api/auth/login `
   -H "Content-Type: application/json" `
   -d '{\"email\":\"florian.chague2@gmail.com\",\"motDePasse\":\"<ton mot de passe admin>\"}'
 ```
@@ -259,7 +259,7 @@ Doit retourner un JWT. Si oui, le bootstrap admin a fonctionné.
 
 ### 5.4 Swagger UI
 
-https://bibliospace.florianchague.dev/swagger-ui.html
+https://bibliospace.kloner.io/swagger-ui.html
 → Page Swagger avec la liste des endpoints.
 
 ### 5.5 Front complet
@@ -334,8 +334,8 @@ Tu dois voir nginx sur 80 et 443, et `sshd` sur 22. Rien d'autre vers `0.0.0.0` 
 
 ## Annexe — Troubleshooting
 
-### "502 Bad Gateway" sur https://bibliospace.florianchague.dev
-- Le conteneur `bibliospace-front` n'écoute pas sur `127.0.0.1:3020`. Vérifier `docker ps` et `docker logs bibliospace-front`.
+### "502 Bad Gateway" sur https://bibliospace.kloner.io
+- Le conteneur `bibliospace-front` n'écoute pas sur `127.0.0.1:3022`. Vérifier `docker ps` et `docker logs bibliospace-front`.
 
 ### "Connection refused" entre back et DB
 - La DB met du temps à devenir `healthy` au premier démarrage (init du schema). Attendre 30s puis `docker compose restart bibliospace-back`.
@@ -344,12 +344,12 @@ Tu dois voir nginx sur 80 et 443, et `sshd` sur 22. Rien d'autre vers `0.0.0.0` 
 - La table `utilisateur` n'était pas vide. Le bootstrap ne tourne que si la table est vide. Pour réinitialiser : `docker compose down -v && docker compose up -d` (PERD TOUTES LES DONNÉES).
 
 ### Certificat Let's Encrypt qui rate
-- Vérifier que le DNS pointe bien sur la VM : `dig bibliospace.florianchague.dev +short`
+- Vérifier que le DNS pointe bien sur la VM : `dig bibliospace.kloner.io +short`
 - Vérifier que le port 80 est ouvert vers Internet (groupe de sécurité Alibaba)
-- Réessayer : `sudo certbot --nginx -d bibliospace.florianchague.dev`
+- Réessayer : `sudo certbot --nginx -d bibliospace.kloner.io`
 
 ### OOM (Out Of Memory) sur la VM
-- 2 GiB c'est tendu. Symptomes : conteneurs qui se restart en boucle, kernel kills.
+- 4 GiB partagés avec les autres sites de la VM : surveiller la RAM. Symptomes : conteneurs qui se restart en boucle, kernel kills.
 - `free -m && swapon --show` pour vérifier
 - Si pas de swap, en activer 2 GiB :
   ```bash

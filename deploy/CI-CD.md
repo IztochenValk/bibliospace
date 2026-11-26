@@ -166,7 +166,7 @@ MYSQL_ROOT_PASSWORD=<random 32 chars>
 MYSQL_DATABASE=bibliospace
 MYSQL_USER=bibliospace
 MYSQL_PASSWORD=<random 32 chars>
-APP_JWT_ISSUER=bibliospace.florianchague.dev
+APP_JWT_ISSUER=bibliospace.kloner.io
 APP_JWT_EXPIRATION_MINUTES=60
 APP_DEMO_PASSWORD_ADMIN=...
 APP_DEMO_PASSWORD_BIBLIOTHECAIRE=...
@@ -236,7 +236,7 @@ lorsque le volume DB est neuf).
 ```bash
 for i in $(seq 1 24); do
   if curl --fail --silent --max-time 5 -o /dev/null \
-       https://bibliospace.florianchague.dev/v3/api-docs; then
+       https://bibliospace.kloner.io/v3/api-docs; then
     echo "Back prêt après $((i*5))s"
     break
   fi
@@ -244,8 +244,8 @@ for i in $(seq 1 24); do
 done
 
 # Une fois prêt, tests finaux :
-curl ... https://bibliospace.florianchague.dev/        → 200
-curl ... https://bibliospace.florianchague.dev/v3/api-docs → 200
+curl ... https://bibliospace.kloner.io/        → 200
+curl ... https://bibliospace.kloner.io/v3/api-docs → 200
 ```
 
 Si l'un des smoke tests échoue, le job retourne un code de sortie 22 et

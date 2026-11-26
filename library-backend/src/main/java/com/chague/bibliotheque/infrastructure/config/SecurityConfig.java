@@ -37,7 +37,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(org.springframework.core.env.Environment env) {
         //ces origines ne sont utiles qu'en dev
         //en prod on override via la variable tu override en prod via la variable
-        // APP_CORS_ALLOWED_ORIGINS=https://bibliospace.florianchague.dev
+        // APP_CORS_ALLOWED_ORIGINS=https://bibliospace.kloner.io
         String raw = env.getProperty(
                 "app.cors.allowed-origins",
                 "http://localhost:3000,http://localhost:5173,http://localhost:8080"

@@ -1,7 +1,7 @@
 # ============================================================================
 # BiblioSpace - Stack de production
 # Hébergement : VM Alibaba Cloud (Ubuntu 24.04, 2 vCPU / 2 GiB RAM)
-# Domaine : bibliospace.florianchague.dev
+# Domaine : bibliospace.kloner.io
 #
 # Usage :
 #   docker compose -f docker-compose.prod.yaml --env-file .env up -d
@@ -83,7 +83,7 @@ services:
       # Le front et le back partagent le même domaine grâce au reverse proxy
       # nginx, donc CORS n'est techniquement pas nécessaire pour la SPA.
       # On déclare quand même l'origine pour les outils tiers (Postman, curl).
-      APP_CORS_ALLOWED_ORIGINS: https://bibliospace.florianchague.dev
+      APP_CORS_ALLOWED_ORIGINS: https://bibliospace.kloner.io
     ports:
       # Exposé uniquement sur localhost de la VM, c'est nginx qui fait le
       # reverse proxy. L'extérieur n'atteint jamais le port 3021 directement.
@@ -119,7 +119,7 @@ services:
       NUXT_PUBLIC_API_BASE: ""
       NODE_ENV: production
     ports:
-      - "127.0.0.1:3020:3000"
+      - "127.0.0.1:3022:3000"
     networks:
       - bibliospace_net
 
